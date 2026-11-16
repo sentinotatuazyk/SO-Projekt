@@ -1,69 +1,44 @@
-#include <iostream>
-#include <cstdlib>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/wait.h>
+#include "main.hpp"
 #include <csignal>
-#include <cerrno>
-
-constexpr int PARTER_MIEJSCA = 120;
-constexpr int BALKONY_MIEJSCA = 50;
-constexpr int LOZE_MIEJSCA = 40;
-constexpr int MAX_POJEMNOSC = (PARTER_MIEJSCA + BALKONY_MIEJSCA + LOZE_MIEJSCA);
-
-struct Sala {
-	int wolne_miejsca;
-	int kasa_otwarta;
-	int szatnia_otwarta;
-	int ewakulacja;
-	int miejsca[MAX_POJEMNOSC];
-};
-
-int shm_id = -1;
-Sala *sala = nullptr;
-
-void handler_dyrektora (int sig){
-	if (sala == nullptr) return;
-	if (sig == SIGUSR1) {
-		std::cout << "[DYREKTOR] Sygnal 1: Kasa przestaje sprzedawac bilety.\n";
-		sala->kasa_otwarta = 0;
-	}else if (sig == SIGUSR2) {
-		std::cout << "[DYREKTOR] Sygnal 2: Szatnia przestaje przyjmowac odziez.\n";
-		sala->szatnia_otwarta = 0;
-	}else if (sig == SIGUSR3) {
-		std::cout << "[DYREKTOR] Sygnal 3: EWAKUACJA! Wszyscy opuszczaja budynek.\n";
-		sala->ewakuacja = 1;
-	}
-}
-
-void sprzataj_zasoby() {
-	if (sala != nullptr) {
-		if (shmdt(sala) == -1) {
-			perror("Blad Shmdt");
-		}
-	}
-	
-	if (shm_id != -1){
-		if (shmctl(shm_id, IPC_RMID, nullptr) == -1) {
-			perror("Blad shmctl (IPC_RMID)");
-		} else {
-			std::cout << "[SYSTEM] Pamiec dzielona usunieta.\n"
-		}
-	}
-}
-
-extern "C"{
-	void zrusta();
-}
-
-void test(){
-	std::cout << "Test\n";
-}
+#include <cstdlib>
+#include <sys/ipc.h>
 
 int main(){
-	test();
 	zrusta();
+
+	struct sigaction sa;
+	sa.sa_handler = handler_dyrektora;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+
+	if (sigaction(SIGUSR1, &sa, nullptr) == -1 ||
+	    sigaction(SIGUSR2, &sa, nullptr) == -1 ||
+		sigaction(SIGUSR3, &sa, nullptr) == -1) {
+		    perror("Blad sigaction");
+			std::exit(EXIT_FAILURE);
+	}
+
+	inicjalizuj_ipc();
+
+	pid_t pid_kasa = fork();
+	if (pid_kasa == -1) {
+	    perror("Blad fork(pid_kasa)");
+		sprzataj_zasoby();
+		std::exit(EXIT_FAILURE);
+	} else if (pid_kasa == 0) {
+	    execl("./kasa", "kasa", nullptr);
+		perror("Blad execl (kasa.cpp)");
+		std::exit(EXIT_FAILURE);
+	}
+
+	while(!sala->ewakuacja) {
+	    pause();
+	}
+
+	kill(pid_kasa, SIGTERM);
+
+	while(wait(nullptr) > 0) {}
+
+	sprzataj_zasoby();
 	return 0;
 }

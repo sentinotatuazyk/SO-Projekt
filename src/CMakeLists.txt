@@ -1,4 +1,6 @@
-add_executable(app main.cpp)
+add_executable(dyrektor main.cpp dyrektor.cpp)
+add_executable(kasa kasa.cpp)
+add_executable(klient klient.cpp)
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
