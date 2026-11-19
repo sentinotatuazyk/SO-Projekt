@@ -19,34 +19,34 @@ constexpr int LICZBA_SEMAFOR = 1;
 constexpr long TYP_ZAPYTANIE_DO_KASY = 1;
 
 
-
-
+enum TypOperacji{OP_REZERWACJA, OP_OPLATA, OP_ZWROT};
 enum TypMiejsca{Parter, Balkon, Loza, Foyer};
 
 struct Miejsce {
     TypMiejsca miejsce;
     int numer;
     int nr_lozy;
-    bool wolne, zarezerwowane;
+    bool wolne, zarezerwowane, sprzedane;
     pid_t pid_klienta;
     time_t czas_rezerwacji;
 };
 
-struct Sala {
+struct Sala { // Struct ktory trzyma informacje o statusie sali i miejsc
 	int wolne_miejsca;
 	bool kasa_otwarta;
 	bool szatnia_otwarta;
 	bool ewakuacja;
 	Miejsce miejsca[MAX_POJEMNOSC];
+	bool dzien_koncertu;
 };
 
 struct KasaKomunikat {
     long mtype;
     pid_t pid_klienta;
     TypMiejsca preferencja;
-    int liczba_biletow;
-    bool sukces;
+    bool sukces,oplacone;
     int idx_miejsca;
+    TypOperacji operacja;
 };
 
 inline int msg_kasa_id = -1;

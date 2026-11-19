@@ -75,12 +75,13 @@ void definiuj_sale() {
         std::exit(EXIT_FAILURE);
     }
     sala->wolne_miejsca = MAX_POJEMNOSC;
-    sala->kasa_otwarta = 1;
-    sala->szatnia_otwarta = 1;
-    sala->ewakuacja = 0;
+    sala->kasa_otwarta = true;
+    sala->szatnia_otwarta = true;
+    sala->ewakuacja = false;
     for (int i = 0; i <MAX_POJEMNOSC; i++ ) {
-        sala->miejsca[i].wolne = 1;
-        sala->miejsca[i].zarezerwowane = 0;
+        sala->miejsca[i].wolne = true;
+        sala->miejsca[i].zarezerwowane = false;
+        sala->miejsca[i].sprzedane = false;
         sala->miejsca[i].pid_klienta = 0;
         sala->miejsca[i].czas_rezerwacji = 0;
         if (i < PARTER_MIEJSCA) {
