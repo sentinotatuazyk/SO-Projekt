@@ -57,3 +57,45 @@ void obsluz_rezerwacje(const KasaKomunikat &req, KasaKomunikat &resp) {
        }
     podnies_semafor(SEM_SALA);
 }
+
+void handler_kasa(int) {
+    // Pusty handler przerywa blokujące msgrcv() po otrzymaniu SIGTERM
+}
+
+int main() {
+    if (!podlacz_zasoby()) {
+        return 1;
+    }
+
+    struct sigaction sa{};
+    sa.sa_handler = handler_kasa;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGTERM, &sa, nullptr);
+
+    std::cout << "[KASA " << getpid() << "] Otwarta i czeka na klientow.\n";
+
+    while (!sala->ewakuacja) {
+        KasaKomunikat req{};
+        ssize_t bajty = msgrcv(msg_kasa_id, &req, sizeof(KasaKomunikat) - sizeof(long), TYP_ZAPYTANIE_DO_KASY, 0);
+
+        if (bajty == -1) {
+            if (errno == EINTR) continue;
+            if (errno == EIDRM || errno == EINVAL) break;
+            perror("[KASA] Blad msgrcv");
+            break;
+        }
+
+        KasaKomunikat resp{};
+        resp.mtype = req.pid_klienta;
+        obsluz_rezerwacje(req, resp);
+
+        if (msgsnd(msg_kasa_id, &resp, sizeof(KasaKomunikat) - sizeof(long), 0) == -1) {
+            if (errno != EINTR) perror("[KASA] Blad msgsnd");
+        }
+    }
+
+    std::cout << "[KASA] Koncze prace.\n";
+    shmdt(sala);
+    return 0;
+}

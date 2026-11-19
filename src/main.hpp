@@ -32,12 +32,12 @@ struct Miejsce {
 };
 
 struct Sala { // Struct ktory trzyma informacje o statusie sali i miejsc
-	int wolne_miejsca;
-	bool kasa_otwarta;
-	bool szatnia_otwarta;
-	bool ewakuacja;
-	Miejsce miejsca[MAX_POJEMNOSC];
-	bool dzien_koncertu;
+        int wolne_miejsca;
+        bool kasa_otwarta;
+        bool szatnia_otwarta;
+        bool ewakuacja;
+        Miejsce miejsca[MAX_POJEMNOSC];
+        bool dzien_koncertu;
 };
 
 struct KasaKomunikat {
@@ -112,5 +112,5 @@ inline void podnies_semafor(int nr_sem) {
 }
 
 extern "C"{
-	void zrusta();
+        void zrusta();
 }
